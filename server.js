@@ -51,24 +51,46 @@ app.get("/v1/guild/:id", cors({
                 "Content-Type": "application/json",
             },
         })
-            .then((res) => res.json())
-            .then((json) => {
-                if (json.code && json.code === 50004) {
-                    res.send({
-                        "error": "The guild is either non-existant, unavailable, or has Server Widget/Discovery disabled."
-                    })
-                    return;
-                }
+        .then((res) => res.json())
+        .then((json) => {
+            if (json.code && json.code === 50004) {
+                res.send({
+                   "error": "The guild is either non-existant, unavailable, or has Server Widget/Discovery disabled."
+                })
+                return;
+            }
 
-                let output = {
-                    id: json.id,
-                    name: json.name,
-                    instant_invite: json.instant_invite,
-                    presence_count: json.presence_count
-                }
+            fetch(`https://canary.discord.com/api/v10/guilds/${id}`, {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bot ${process.env.TOKEN}`,
+                },
+            })
+            .then((res1) => res1.json())
+            .then((json1) => {
+                 if (json1.code && json1.code === 50004) {
+                     res.send({
+                         "error": "The guild is either non-existant, unavailable, or has Server Widget/Discovery disabled."
+                     })
+                     return;
+                  }
 
-                res.send(output);
-                client.setEx(`guild_${id}`, 10800, JSON.stringify(output))
+                  console.log(json1)
+
+                  let output = {
+                      id: json.id,
+                      name: json.name,
+                      icon: json1.icon,
+                      splash: json1.splash,
+                      features: json1.features,
+                      banner: json1.banner,
+                      instant_invite: json.instant_invite,
+                      presence_count: json.presence_count
+                  }
+
+                  res.send(output);
+                  client.setEx(`guild_${id}`, 10800, JSON.stringify(output))
+              })
         })
     }
 })
